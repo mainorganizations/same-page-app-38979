@@ -166,13 +166,18 @@
     const toast = document.getElementById('toast');
 
     function renderFiles() {
+      const iconUrls = {
+        pdf: 'https://png.pngtree.com/png-clipart/20220612/original/pngtree-pdf-file-icon-png-png-image_7965915.png',
+        excel: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/119_Excel_logo_logos-512.png'
+      };
+      
       fileTableBody.innerHTML = files.map(file => `
         <tr data-file-id="${file.id}">
           <td><input type="checkbox" class="checkbox" onclick="event.stopPropagation()" /></td>
           <td>
             <div class="file-icon-wrapper">
               <div class="file-icon ${file.type}">
-                <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <img src="${iconUrls[file.type]}" alt="${file.type}" style="width:32px;height:32px;object-fit:contain;" />
               </div>
               <span>${file.name}</span>
             </div>
