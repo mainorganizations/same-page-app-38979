@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { FileText, MoreHorizontal, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { FileVerificationDialog } from "./FileVerificationDialog";
 
 interface FileItem {
   id: string;
@@ -18,7 +20,21 @@ const files: FileItem[] = [
 ];
 
 export function FileList() {
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleFileClick = (file: FileItem) => {
+    setSelectedFile(file);
+    setDialogOpen(true);
+  };
+
   return (
+    <>
+      <FileVerificationDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        fileName={selectedFile?.name || ""}
+      />
     <div className="flex-1 overflow-auto">
       <div className="min-w-max">
         <table className="w-full">
@@ -52,7 +68,8 @@ export function FileList() {
             {files.map((file) => (
               <tr
                 key={file.id}
-                className="border-b border-border hover:bg-muted/50 transition-colors group"
+                className="border-b border-border hover:bg-muted/50 transition-colors group cursor-pointer"
+                onClick={() => handleFileClick(file)}
               >
                 <td className="py-3">
                   <Checkbox className="mx-auto" />
@@ -84,6 +101,10 @@ export function FileList() {
                     variant="ghost"
                     size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle menu action
+                    }}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
@@ -94,5 +115,6 @@ export function FileList() {
         </table>
       </div>
     </div>
+    </>
   );
 }
