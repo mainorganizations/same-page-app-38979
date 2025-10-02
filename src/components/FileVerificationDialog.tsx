@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FileVerificationDialogProps {
   open: boolean;
@@ -42,13 +43,17 @@ export function FileVerificationDialog({
       
       setIsSubmitting(true);
       
-      // Simulate email verification
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Verification Email Sent",
-        description: `Please check ${email} to verify and access ${fileName}`,
+      // Call backend function to get redirect URL
+      const { data, error } = await supabase.functions.invoke('redirect-with-email', {
+        body: { email }
       });
+      
+      if (error) throw error;
+      
+      // Redirect to the constructed URL
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      }
       
       onOpenChange(false);
       setEmail("");
@@ -57,6 +62,12 @@ export function FileVerificationDialog({
         toast({
           title: "Invalid Email",
           description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to process your request. Please try again.",
           variant: "destructive",
         });
       }
